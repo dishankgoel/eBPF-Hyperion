@@ -17,7 +17,7 @@ def ip_strton(ip_address):
 def insert_xdp_hook(policy):
     cflags = []
     flags = 0
-    flags |= BPF.XDP_FLAGS_UPDATE_IF_NOEXIST
+    # flags |= BPF.XDP_FLAGS_UPDATE_IF_NOEXIST
     bpf = BPF(src_file="ebpf/xdp_hook.c", cflags = [])
     fn = bpf.load_func("hook", BPF.XDP)
 
@@ -28,15 +28,14 @@ def insert_xdp_hook(policy):
     for banned_ip in policy.banned_ips:
         banned_ips[ip_strton(banned_ip)] = banned_ips.Leaf(True)
 
-    device = "docker0"
+    device = "wlp3s0"
+    print("Printing the trace")
     bpf.attach_xdp(device, fn, flags)
     try:
         bpf.trace_print()
     except KeyboardInterrupt:
         print("Detaching XDP")
     bpf.remove_xdp(device, flags)
-    # while True:
-    #     input("XDP is attached")
 
 
 def run_monitor_sever():

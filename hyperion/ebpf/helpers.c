@@ -14,7 +14,7 @@ __attribute__((__always_inline__))
 
         struct iphdr *iph;
         iph = (struct iphdr *) (eth + 1);
-        if((void *)(iph + 1) > data_end) {
+        if((void *)(iph + sizeof(*iph)) > data_end) {
             return -1;
         }
 

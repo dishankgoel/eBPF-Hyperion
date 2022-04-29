@@ -1,5 +1,6 @@
 #include <linux/bpf.h>
 #include <linux/if_ether.h>
+#include <linux/in.h>
 #include <linux/types.h>
 
 #include "hyperion/ebpf/helpers.c"
@@ -12,12 +13,14 @@ BPF_HASH(banned_ips, ip_addr, int);
 
 int hook(struct xdp_md *ctx) {
 
-    bpf_trace_printk("Got packet\\n");
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-
     struct ethhdr *eth = data;
-    if((void *)(eth + 1) > data_end) {
+
+    uint64_t nh_off;
+    nh_off = sizeof(*eth);
+
+    if((data + nh_off) > data_end) {
         return XDP_DROP;
     }
 
@@ -31,7 +34,7 @@ int hook(struct xdp_md *ctx) {
     } else if(ret == -1) {
         return XDP_DROP;
     }
-    bpf_trace_printk("Packet recieve: (%d,%d,%d)\\n", *saddr, *daddr, *dport);
+    bpf_trace_printk("Packet recieve: (%d,%d,%d)\\n", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
 
     // Check user policies
     // Check if port is allowed

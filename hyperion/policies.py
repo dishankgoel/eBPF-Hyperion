@@ -5,7 +5,6 @@ class Policy:
     def __init__(self, policy_file) -> None:
         self.policy_file = policy_file
         self.disallowed_ports = []
-        self.disallowed_protocols = []
         self.banned_ips = []
         self.parse_policy()
 
@@ -14,7 +13,6 @@ class Policy:
             with open(self.policy_file) as f:
                 policy_json = json.load(f)
         else:
-            policy_json = {"disallowed_ports": [], "disallowed_protocols": [], "banned_ips": []}
+            policy_json = {"disallowed_ports": [], "banned_ips": []}
         self.disallowed_ports = policy_json['disallowed_ports']
-        self.disallowed_protocols = policy_json['disallowed_protocols']
         self.banned_ips = policy_json['banned_ips']

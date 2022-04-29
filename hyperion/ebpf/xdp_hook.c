@@ -8,11 +8,8 @@
 typedef __be32 ip_addr;
 typedef __be16 port;
 
-BPF_HASH(disallowed_ports, __be16, int);
-
-BPF_HASH(disallowed_protocols, int, int);
-
-BPF_HASH(banned_ips, int, int);
+BPF_HASH(disallowed_ports, port, int);
+BPF_HASH(banned_ips, ip_addr, int);
 
 int hook(struct xdp_md *ctx) {
 
@@ -29,7 +26,23 @@ int hook(struct xdp_md *ctx) {
     port *sport = NULL;
     port *dport = NULL;
     int ret = parse_packet(eth, data_end, &saddr, &daddr, &sport, &dport);
+    if(ret == 0) {
+        return XDP_PASS;
+    } else if(ret == -1) {
+        return XDP_DROP;
+    }
 
     // Check user policies
+    // Check if port is allowed
+    int *val = disallowed_ports.lookup(dport);
+    if(val != NULL) {
+        return XDP_DROP;
+    }
+    // Check if ip addr is allowed
+    *val = banned_ips.lookup(saddr);
+    if(val != NULL) {
+        return XDP_DROP;
+    }
 
+    return XDP_PASS;
 }

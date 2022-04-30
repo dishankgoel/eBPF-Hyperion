@@ -60,7 +60,7 @@ __attribute__((__always_inline__))
             (* sport) = &udp->source;
             (* dport) = &udp->dest;
             (* protocol) = 0;
-            udp_counter.incrememnt(*daddr);
+            udp_counter.increment(*daddr);
         } else if(iph->protocol == IPPROTO_TCP) {
             struct tcphdr *tcp = (struct tcphdr *) (iph + 1);
             if((void *) (tcp + 1) > data_end) {
@@ -70,11 +70,11 @@ __attribute__((__always_inline__))
             (* sport) = &tcp->source;
             (* dport) = &tcp->dest;
             (* protocol) = 1;
-            tcp_counter.incrememnt(*daddr);
+            tcp_counter.increment(*daddr);
         } else {
             return 0;
         }
-        total_counter.incrememnt(*daddr);
+        total_counter.increment(*daddr);
         return 1;
     }
 
@@ -236,7 +236,7 @@ int hook(struct xdp_md *ctx) {
             eth->h_dest[2] = (HOST_MAC >> (40 - 8*2)) & 0xff;
             eth->h_dest[1] = (HOST_MAC >> (40 - 8*1)) & 0xff;
             eth->h_dest[0] = (HOST_MAC >> (40 - 8*0)) & 0xff;
-            bpf_trace_printk("New mac (egress): %llx", *new_mac);
+            bpf_trace_printk("New mac (egress): %llx", HOST_MAC);
         }
     }
 

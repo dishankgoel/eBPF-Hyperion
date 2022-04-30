@@ -9,7 +9,7 @@ import ctypes as ct
 def ip_strton(ip_address):
     addr = ipaddress.ip_address(ip_address)
     if addr.version == 4:
-        return (socket.htonl((int)(addr)))
+        return ct.c_uint(socket.htonl((int)(addr)))
     else:
         return (ct.c_ubyte * 16)(*list(addr.packed))
 
@@ -31,9 +31,9 @@ def insert_xdp_hook(hconfig):
         print("No containers running to load balance")
         exit()
     cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
-    cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip)))
+    cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip).value))
     cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac)))
-    cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1")))
+    cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1").value))
     cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc")))
     flags = 0
     bpf = BPF(src_file="ebpf/xdp_hook.c", cflags=cflags)

@@ -206,9 +206,14 @@ int hook(struct xdp_md *ctx) {
             // Handle the ingress traffic
             int zero = 0;
             uint32_t *nextserver = nextcontainer.lookup(&zero);
+            if(nextserver == NULL) {
+                return XDP_PASS;
+            }
             ip_addr *new_dest = containers.lookup(nextserver);
             mac_addr *new_mac = containers_mac.lookup(nextserver);
-
+            if(new_dest == NULL || new_mac == NULL) {
+                return XDP_PASS;
+            }
             (old_addr) = (iph->daddr);
             (new_addr) = (* new_dest);
 

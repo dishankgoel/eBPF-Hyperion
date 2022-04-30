@@ -58,11 +58,11 @@ def insert_xdp_hook(hconfig):
 
     fn = bpf.load_func("hook", BPF.XDP)
     bpf.attach_xdp(device, fn, flags)
-    # print("Printing the trace")
-    # try:
-    #     bpf.trace_print()
-    # except KeyboardInterrupt:
-    #     print("Detaching XDP")
+    print("Printing the trace")
+    try:
+        bpf.trace_print()
+    except KeyboardInterrupt:
+        print("Detaching XDP")
     bpf.remove_xdp(device, flags)
 
 

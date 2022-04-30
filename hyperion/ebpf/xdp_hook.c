@@ -115,6 +115,7 @@ static inline void update_ip_checksum(struct ethhdr * eth, void * data_end, ip_a
     __u64 cs = iph->check;
     update_csum(&cs, old_addr, new_addr);
     iph->check = cs;
+    return;
 }
 
 __attribute__((__always_inline__))

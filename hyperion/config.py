@@ -29,6 +29,7 @@ class Config:
             }
         self.disallowed_ports = config_json['disallowed_ports']
         self.banned_ips = config_json['banned_ips']
+        self.containers = config_json['containers']
 
     def get_hyperion_container(self):
         try:

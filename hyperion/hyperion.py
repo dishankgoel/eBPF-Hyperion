@@ -28,21 +28,22 @@ def mac_strton(mac_address):
     final_value |= (values[5] << (40 - 8*5))
     return ct.c_longlong(final_value)
 
+device = "wlp3s0"
+device = "docker0"
 
 def insert_xdp_hook(hconfig):
     global bpf
     cflags = []
-    if(len(hconfig.containers) <= 1):
-        print("No containers running to load balance")
-        exit()
-    cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
-    cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip).value))
-    cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac).value))
-    cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1").value))
-    cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc").value))
+    # if(len(hconfig.containers) <= 1):
+    #     print("No containers running to load balance")
+    #     exit()
+    # cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
+    # cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip).value))
+    # cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac).value))
+    # cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1").value))
+    # cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc").value))
     flags = 0
     bpf = BPF(src_file="ebpf/xdp_hook.c", cflags=cflags)
-    device = "eth0"
 
     disallowed_ports = bpf[b"disallowed_ports"]
     banned_ips = bpf[b"banned_ips"]
@@ -53,13 +54,13 @@ def insert_xdp_hook(hconfig):
         banned_ips[ip_strton(banned_ip)] = banned_ips.Leaf(True)
 
     # Add the container IPs and MACs to the container array
-    containers = bpf[b"containers"]
-    containers_mac = bpf[b"containers_mac"]
-    i = 0
-    for container_ip, container_mac in hconfig.containers:
-        containers[ct.c_int(i)] = ip_strton(container_ip)
-        containers_mac[ct.c_int(i)] = mac_strton(container_mac)
-        i += 1
+    # containers = bpf[b"containers"]
+    # containers_mac = bpf[b"containers_mac"]
+    # i = 0
+    # for container_ip, container_mac in hconfig.containers:
+    #     containers[ct.c_int(i)] = ip_strton(container_ip)
+    #     containers_mac[ct.c_int(i)] = mac_strton(container_mac)
+    #     i += 1
 
     fn = bpf.load_func("hook", BPF.XDP)
     bpf.attach_xdp(device, fn, flags)
@@ -71,6 +72,7 @@ def insert_xdp_hook(hconfig):
     # bpf.remove_xdp(device, flags)
     # return bpf
 
+app = FastAPI()
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
@@ -79,8 +81,9 @@ async def websocket_endpoint(websocket: WebSocket):
     print("Accepting Connections")
     await websocket.accept()
     print("Accepted Connection")
-    while True:
-        time.sleep(2)
+    running = 1
+    while running:
+        time.sleep(1)
         cnt+=1
         try:
             # data = await websocket.receive_text()
@@ -89,30 +92,47 @@ async def websocket_endpoint(websocket: WebSocket):
             tcp_counter = bpf.get_table("tcp_counter")
             udp_counter = bpf.get_table("udp_counter")
             total_counter = bpf.get_table("total_counter")
-            # data = {
-            #         "tcp_counter": ,
-            #         "a": random.randint(1,5),
-            #         "b": random.randint(1,7)
-            #         }
-
+            data = {
+                    # "cnt": cnt,
+                    # "a": random.randint(1,5),
+                    # "b": random.randint(1,7)
+                    }
             for k, v in tcp_counter.items():
-                print("TCP_COUNT : %10d, COUNT : %10d" % (k.value, v.value))
+                if k.value in data:
+                    data[k.value][0] = v.value
+                else:
+                    data[k.value] = [v.value, 0, 0]
+            for k, v in udp_counter.items():
+                if k.value in data:
+                    data[k.value][1] = v.value
+                else:
+                    data[k.value] = [0, v.value, 0]
+            for k, v in total_counter.items():
+                if k.value in data:
+                    data[k.value][2] = v.value
+                else:
+                    data[k.value] = [0, 0, v.value]
+            print(data)
+                # print("TCP_COUNT : %10d, COUNT : %10d" % (k.value, v.value))
             await websocket.send_json(data)
             # print("[INFO] Data received: ", data)
         except Exception as e:
             print(f'[Error]: {e}')
+            running = 0
             break
 
 def main():
     import uvicorn
     myconfig = Config(None)
     insert_xdp_hook(myconfig)
-    app = FastAPI()
 
 #     parser = argparse.ArgumentParser()
 #     parser.add_argument("--config", "-c", help="Config file")
 #     args = parser.parse_args()
     uvicorn.run(app, debug='true')
+    print("SERVER ENDED")
+    bpf.remove_xdp(device, 0)
+
 
 if __name__ == "__main__":
     main()

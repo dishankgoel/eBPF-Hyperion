@@ -44,6 +44,7 @@ __attribute__((__always_inline__))
         // IP address
         (* saddr) = &iph->saddr;
         (* daddr) = &iph->daddr;
+        total_counter.increment(**saddr);
 
         // Invalid IP header or not supported
         if(iph->ihl != 5 || (iph->frag_off & 65343) || (iph->ttl <= 0)) {
@@ -60,7 +61,7 @@ __attribute__((__always_inline__))
             (* sport) = &udp->source;
             (* dport) = &udp->dest;
             (* protocol) = 0;
-            udp_counter.increment(*daddr);
+            udp_counter.increment(**saddr);
         } else if(iph->protocol == IPPROTO_TCP) {
             struct tcphdr *tcp = (struct tcphdr *) (iph + 1);
             if((void *) (tcp + 1) > data_end) {
@@ -70,11 +71,10 @@ __attribute__((__always_inline__))
             (* sport) = &tcp->source;
             (* dport) = &tcp->dest;
             (* protocol) = 1;
-            tcp_counter.increment(*daddr);
+            tcp_counter.increment(**saddr);
         } else {
             return 0;
         }
-        total_counter.increment(*daddr);
         return 1;
     }
 
@@ -181,8 +181,7 @@ int hook(struct xdp_md *ctx) {
     struct iphdr *iph;
     iph = (struct iphdr *) (eth + 1);
 
-
-    ip_addr old_addr;
+    /* ip_addr old_addr;
     __builtin_memset(&old_addr, 0, sizeof(old_addr));
     ip_addr new_addr;
     __builtin_memset(&new_addr, 0, sizeof(new_addr));
@@ -255,7 +254,7 @@ int hook(struct xdp_md *ctx) {
         struct udphdr *udp = (struct udphdr *) (iph + 1);
         udp->check = update_udp_checksum(udp->check, old_addr, new_addr);
     }
-    bpf_trace_printk("Packet modified: (%x,%x,%u)", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(*dport));
+    bpf_trace_printk("Packet modified: (%x,%x,%u)", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(*dport)); */
 
-    return XDP_TX;
+    return XDP_PASS;
 }

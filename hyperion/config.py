@@ -9,27 +9,29 @@ class Config:
         self.docker = docker.from_env()
         self.disallowed_ports = []
         self.banned_ips = []
-        self.hyperion_container_ip, self.hyperion_container_mac = self.get_hyperion_container()
+        # self.hyperion_container_ip, self.hyperion_container_mac = self.get_hyperion_container()
         self.containers = []
         self.parse_config()
 
     def parse_config(self):
-        if self.config_file is not None:
-            with open(self.config_file) as f:
-                config_json = json.load(f)
-            if "containers" in config_json:
-                config_json["containers"] = self.ip_from_containers(config_json["containers"])
-            else:
-                config_json["containers"] = self.ip_all_containers()
-        else:
-            config_json = {
-                "disallowed_ports": [],
-                "banned_ips": [],
-                "containers": self.ip_all_containers()
-            }
-        self.disallowed_ports = config_json['disallowed_ports']
-        self.banned_ips = config_json['banned_ips']
-        self.containers = config_json['containers']
+        # if self.config_file is not None:
+        #     with open(self.config_file) as f:
+        #         config_json = json.load(f)
+        #     if "containers" in config_json:
+        #         config_json["containers"] = self.ip_from_containers(config_json["containers"])
+        #     else:
+        #         config_json["containers"] = self.ip_all_containers()
+        # else:
+        #     config_json = {
+        #         "disallowed_ports": [],
+        #         "banned_ips": [],
+        #         "containers": self.ip_all_containers()
+        #     }
+        # self.disallowed_ports = config_json['disallowed_ports']
+        # self.banned_ips = config_json['banned_ips']
+        # self.containers = config_json['containers']
+        self.banned_ips = []
+        self.disallowed_ports = []
 
     def get_hyperion_container(self):
         try:

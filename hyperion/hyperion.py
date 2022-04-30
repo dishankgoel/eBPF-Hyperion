@@ -4,6 +4,9 @@ import socket
 import argparse
 import ipaddress
 import ctypes as ct
+import docker
+
+client = docker.from_env()
 
 
 def ip_strton(ip_address):
@@ -13,11 +16,13 @@ def ip_strton(ip_address):
     else:
         return (ct.c_ubyte * 16)(*list(addr.packed))
 
+def get_containers():
+    return client.containers.list()
+
 
 def insert_xdp_hook(policy):
     cflags = []
     flags = 0
-    # flags |= BPF.XDP_FLAGS_UPDATE_IF_NOEXIST
     bpf = BPF(src_file="ebpf/xdp_hook.c", cflags = [])
     fn = bpf.load_func("hook", BPF.XDP)
 
@@ -28,6 +33,7 @@ def insert_xdp_hook(policy):
     for banned_ip in policy.banned_ips:
         banned_ips[ip_strton(banned_ip)] = banned_ips.Leaf(True)
 
+    device = "docker0"
     device = "wlp3s0"
     print("Printing the trace")
     bpf.attach_xdp(device, fn, flags)

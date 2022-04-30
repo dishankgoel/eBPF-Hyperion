@@ -14,6 +14,8 @@ typedef __be16 port;
 BPF_HASH(disallowed_ports, port, int);
 BPF_HASH(banned_ips, ip_addr, int);
 
+// BPF_HISTOGRAM(tcp_counter, )
+
 __attribute__((__always_inline__))
     static inline int parse_packet(struct ethhdr * eth, void * data_end, __be32 ** saddr, __be32 ** daddr, __be16 ** sport, __be16 ** dport) {
 
@@ -87,7 +89,7 @@ int hook(struct xdp_md *ctx) {
         bpf_trace_printk("error#3");
         return XDP_DROP;
     }
-    // bpf_trace_printk("Packet recieve: (%d,%d,%d)\\n", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
+    bpf_trace_printk("Packet recieve: (%u,%u,%u)", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
 
     // Check user policies
     // Check if port is allowed

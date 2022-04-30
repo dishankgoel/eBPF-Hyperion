@@ -33,8 +33,7 @@ def insert_xdp_hook(policy):
     for banned_ip in policy.banned_ips:
         banned_ips[ip_strton(banned_ip)] = banned_ips.Leaf(True)
 
-    device = "docker0"
-    device = "wlp3s0"
+    device = "eth0"
     print("Printing the trace")
     bpf.attach_xdp(device, fn, flags)
     try:

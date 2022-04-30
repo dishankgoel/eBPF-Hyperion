@@ -22,7 +22,7 @@ def mac_strton(mac_address):
     final_value |= (values[3] << (40 - 8*3))
     final_value |= (values[4] << (40 - 8*4))
     final_value |= (values[5] << (40 - 8*5))
-    return final_value
+    return ct.c_longlong(final_value)
 
 
 def insert_xdp_hook(hconfig):
@@ -32,9 +32,9 @@ def insert_xdp_hook(hconfig):
         exit()
     cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
     cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip).value))
-    cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac)))
+    cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac).value))
     cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1").value))
-    cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc")))
+    cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc").value))
     flags = 0
     bpf = BPF(src_file="ebpf/xdp_hook.c", cflags=cflags)
     device = "eth0"

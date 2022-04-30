@@ -27,7 +27,7 @@ def mac_strton(mac_address):
 
 def insert_xdp_hook(hconfig):
     cflags = []
-    if(len(hconfig.containers) == 0):
+    if(len(hconfig.containers) <= 1):
         print("No containers running to load balance")
         exit()
     cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))

@@ -213,6 +213,7 @@ int hook(struct xdp_md *ctx) {
             eth->h_dest[0] = ((*new_mac) >> (40 - 8*0)) & 0xff;
             // Update next server as LB target
             *nextserver = ((*nextserver) + 1) % NUM_CONTAINERS;
+            bpf_trace_printk("New mac (ingress): %llx", *new_mac);
         }
     } else {
         if(*sport == bpf_htons(HYP_PORT)) {
@@ -230,6 +231,7 @@ int hook(struct xdp_md *ctx) {
             eth->h_dest[2] = (HOST_MAC >> (40 - 8*2)) & 0xff;
             eth->h_dest[1] = (HOST_MAC >> (40 - 8*1)) & 0xff;
             eth->h_dest[0] = (HOST_MAC >> (40 - 8*0)) & 0xff;
+            bpf_trace_printk("New mac (egress): %llx", *new_mac);
         }
     }
 

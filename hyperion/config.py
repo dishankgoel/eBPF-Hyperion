@@ -48,7 +48,7 @@ class Config:
                 exit(0)
             ip = container.attrs["NetworkSettings"]['IPAddress']
             mac = container.attrs["NetworkSettings"]['MacAddress']
-            if ip != self.hyperion_container:
+            if ip != self.hyperion_container_ip:
                 ips.append((ip, mac))
         return ips
 
@@ -59,6 +59,6 @@ class Config:
         for container in containers:
             ip = container.attrs["NetworkSettings"]['IPAddress']
             mac = container.attrs["NetworkSettings"]['MacAddress']
-            if ip != self.hyperion_container:
+            if ip != self.hyperion_container_ip:
                 all_ips.append((ip, mac))
         return all_ips

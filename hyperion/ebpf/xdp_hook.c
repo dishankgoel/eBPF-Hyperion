@@ -22,7 +22,9 @@ BPF_ARRAY(nextcontainer, uint32_t, 1);
 BPF_ARRAY(containers, ip_addr, 100);
 BPF_ARRAY(containers_mac, mac_addr, 100);
 
-// BPF_HISTOGRAM(tcp_counter, )
+BPF_HISTOGRAM(tcp_counter, u64);
+BPF_HISTOGRAM(udp_counter, u64);
+BPF_HISTOGRAM(total_counter, u64);
 
 __attribute__((__always_inline__))
     static inline int parse_packet(struct ethhdr * eth, void * data_end, __be32 ** saddr, __be32 ** daddr, __be16 ** sport, __be16 ** dport, int * protocol) {
@@ -58,6 +60,7 @@ __attribute__((__always_inline__))
             (* sport) = &udp->source;
             (* dport) = &udp->dest;
             (* protocol) = 0;
+            udp_counter.incrememnt(*daddr);
         } else if(iph->protocol == IPPROTO_TCP) {
             struct tcphdr *tcp = (struct tcphdr *) (iph + 1);
             if((void *) (tcp + 1) > data_end) {
@@ -67,9 +70,11 @@ __attribute__((__always_inline__))
             (* sport) = &tcp->source;
             (* dport) = &tcp->dest;
             (* protocol) = 1;
+            tcp_counter.incrememnt(*daddr);
         } else {
             return 0;
         }
+        total_counter.incrememnt(*daddr);
         return 1;
     }
 

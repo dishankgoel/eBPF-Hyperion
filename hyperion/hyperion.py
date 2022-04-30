@@ -4,7 +4,11 @@ import socket
 import argparse
 import ipaddress
 import ctypes as ct
+from fastapi import FastAPI, WebSocket
+import time
+import random
 
+bpf = None
 
 def ip_strton(ip_address):
     addr = ipaddress.ip_address(ip_address)
@@ -26,6 +30,7 @@ def mac_strton(mac_address):
 
 
 def insert_xdp_hook(hconfig):
+    global bpf
     cflags = []
     if(len(hconfig.containers) <= 1):
         print("No containers running to load balance")
@@ -58,28 +63,56 @@ def insert_xdp_hook(hconfig):
 
     fn = bpf.load_func("hook", BPF.XDP)
     bpf.attach_xdp(device, fn, flags)
-    print("Printing the trace")
-    try:
-        bpf.trace_print()
-    except KeyboardInterrupt:
-        print("Detaching XDP")
-    bpf.remove_xdp(device, flags)
+    # print("Printing the trace")
+    # try:
+    #     bpf.trace_print()
+    # except KeyboardInterrupt:
+    #     print("Detaching XDP")
+    # bpf.remove_xdp(device, flags)
+    # return bpf
 
 
-def run_monitor_sever():
-    pass
+@app.websocket('/ws')
+async def websocket_endpoint(websocket: WebSocket):
+    global bpf
+    cnt = 0
+    print("Accepting Connections")
+    await websocket.accept()
+    print("Accepted Connection")
+    while True:
+        time.sleep(2)
+        cnt+=1
+        try:
+            # data = await websocket.receive_text()
+            print("sending data")
+            # await websocket.send_text(f"Sending from server! {cnt}")
+            tcp_counter = bpf.get_table("tcp_counter")
+            udp_counter = bpf.get_table("udp_counter")
+            total_counter = bpf.get_table("total_counter")
+            # data = {
+            #         "tcp_counter": ,
+            #         "a": random.randint(1,5),
+            #         "b": random.randint(1,7)
+            #         }
 
+            for k, v in tcp_counter.items():
+                print("TCP_COUNT : %10d, COUNT : %10d" % (k.value, v.value))
+            await websocket.send_json(data)
+            # print("[INFO] Data received: ", data)
+        except Exception as e:
+            print(f'[Error]: {e}')
+            break
 
 def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", "-c", help="Config file")
-    args = parser.parse_args()
-
-    myconfig = Config(args.config)
+    import uvicorn
+    myconfig = Config(None)
     insert_xdp_hook(myconfig)
-    run_monitor_sever()
+    app = FastAPI()
 
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("--config", "-c", help="Config file")
+#     args = parser.parse_args()
+    uvicorn.run(app, debug='true')
 
 if __name__ == "__main__":
     main()

@@ -248,7 +248,7 @@ int hook(struct xdp_md *ctx) {
         struct udphdr *udp = (struct udphdr *) (iph + 1);
         udp->check = update_udp_checksum(udp->check, old_addr, new_addr);
     }
-    bpf_trace_printk("Packet recieve: (%x,%x,%u)", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
+    bpf_trace_printk("Packet modified: (%x,%x,%u)", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(*dport));
 
     return XDP_TX;
 }

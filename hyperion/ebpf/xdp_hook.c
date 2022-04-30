@@ -19,8 +19,8 @@ BPF_HASH(banned_ips, ip_addr, int);
 
 BPF_ARRAY(nextcontainer, uint32_t, 1);
 
-BPF_ARRAY(containers, ip_addr, 500);
-BPF_ARRAY(containers_mac, mac_addr, 500);
+BPF_ARRAY(containers, ip_addr, 100);
+BPF_ARRAY(containers_mac, mac_addr, 100);
 
 // BPF_HISTOGRAM(tcp_counter, )
 
@@ -125,26 +125,13 @@ static inline int update_udp_checksum(__u64 cs, ip_addr old_addr, ip_addr new_ad
 }
 
 
-/* static __always_inline __u16
-csum_fold_helper(__u64 csum)
-{
-    int i;
-#pragma unroll
-    for (i = 0; i < 4; i++)
-    {
-        if (csum >> 16)
-            csum = (csum & 0xffff) + (csum >> 16);
-    }
-    return ~csum;
-}
-
 static __always_inline __u16
 iph_csum(struct iphdr *iph)
 {
     iph->check = 0;
     unsigned long long csum = bpf_csum_diff(0, 0, (unsigned int *)iph, sizeof(struct iphdr), 0);
     return csum_fold_helper(csum);
-} */
+}
 
 int hook(struct xdp_md *ctx) {
 
@@ -173,7 +160,7 @@ int hook(struct xdp_md *ctx) {
         bpf_trace_printk("error#3");
         return XDP_DROP;
     }
-    bpf_trace_printk("Packet recieve: (%u,%u,%u)", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
+    bpf_trace_printk("Packet recieve: (%x,%x,%u)", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
 
     // Check user policies
     // Check if port is allowed
@@ -254,12 +241,14 @@ int hook(struct xdp_md *ctx) {
     eth->h_source[1] = (LB_MAC >> (40 - 8*1)) & 0xff;
     eth->h_source[0] = (LB_MAC >> (40 - 8*0)) & 0xff;
 
-    update_ip_checksum(eth, data_end, old_addr, new_addr);
+    // update_ip_checksum(eth, data_end, old_addr, new_addr);
+    iph->check = iph_csum(iph);
 
     if(protocol == 0) { // Update UDP checksum
         struct udphdr *udp = (struct udphdr *) (iph + 1);
         udp->check = update_udp_checksum(udp->check, old_addr, new_addr);
     }
+    bpf_trace_printk("Packet recieve: (%x,%x,%u)", bpf_ntohl(*saddr), bpf_ntohl(*daddr), bpf_ntohs(*dport));
 
     return XDP_TX;
 }

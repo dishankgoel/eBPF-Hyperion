@@ -27,8 +27,13 @@ def mac_strton(mac_address):
 
 def insert_xdp_hook(hconfig):
     cflags = []
+    cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
+    cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip)))
+    cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac)))
+    cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1")))
+    cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc")))
     flags = 0
-    bpf = BPF(src_file="ebpf/xdp_hook.c", cflags=[])
+    bpf = BPF(src_file="ebpf/xdp_hook.c", cflags=cflags)
     device = "eth0"
     fn = bpf.load_func("hook", BPF.XDP)
 
@@ -48,11 +53,6 @@ def insert_xdp_hook(hconfig):
         containers[ct.c_int(i)] = ip_strton(container_ip)
         containers_mac[ct.c_int(i)] = mac_strton(container_mac)
         i += 1
-    cflags.append("-DNUM_CONTAINERS={}".format(len(hconfig.containers)))
-    cflags.append("-DLB_IP={}".format(ip_strton(hconfig.hyperion_container_ip)))
-    cflags.append("-DLB_MAC={}".format(mac_strton(hconfig.hyperion_container_mac)))
-    cflags.append("-DHOST_IP={}".format(ip_strton("172.17.0.1")))
-    cflags.append("-DHOST_MAC={}".format(mac_strton("02:42:ca:5e:44:fc")))
 
     bpf.attach_xdp(device, fn, flags)
     # print("Printing the trace")

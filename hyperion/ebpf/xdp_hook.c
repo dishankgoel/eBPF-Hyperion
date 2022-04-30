@@ -17,10 +17,10 @@ typedef __be16 port;
 BPF_HASH(disallowed_ports, port, int);
 BPF_HASH(banned_ips, ip_addr, int);
 
-BPF_ARRAY(nextcontainer, uint32_t, 1)
+BPF_ARRAY(nextcontainer, uint32_t, 1);
 
-BPF_ARRAY(containers, ip_addr, 500)
-BPF_ARRAY(containers_mac, mac_addr, 500)
+BPF_ARRAY(containers, ip_addr, 500);
+BPF_ARRAY(containers_mac, mac_addr, 500);
 
 // BPF_HISTOGRAM(tcp_counter, )
 

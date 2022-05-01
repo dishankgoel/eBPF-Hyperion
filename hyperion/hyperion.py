@@ -17,6 +17,11 @@ def ip_strton(ip_address):
     else:
         return (ct.c_ubyte * 16)(*list(addr.packed))
 
+def ip_ntostr(value):
+    ip = socket.ntohl(value)
+    # ip = "{}.{}.{}.{}".format((ip >> 3*8) & 0xff, (ip >> 2*8) & 0xff, (ip >> 1*8) & 0xff, (ip >> 0*8) & 0xff)
+    return ip
+
 def mac_strton(mac_address):
     final_value = 0
     values = [int(i, 16) for i in mac_address.split(':')]
@@ -70,7 +75,6 @@ def insert_xdp_hook(hconfig):
     # except KeyboardInterrupt:
     #     print("Detaching XDP")
     # bpf.remove_xdp(device, flags)
-    # return bpf
 
 app = FastAPI()
 
@@ -92,28 +96,32 @@ async def websocket_endpoint(websocket: WebSocket):
             tcp_counter = bpf.get_table("tcp_counter")
             udp_counter = bpf.get_table("udp_counter")
             total_counter = bpf.get_table("total_counter")
-            data = {
-                    # "cnt": cnt,
-                    # "a": random.randint(1,5),
-                    # "b": random.randint(1,7)
-                    }
+            container_data = { }
             for k, v in tcp_counter.items():
-                if k.value in data:
-                    data[k.value][0] = v.value
+                ip = ip_ntostr(k.value)
+                # ip = k.value
+                if ip in container_data:
+                    container_data[ip]["tcp_counter"] = v.value
                 else:
-                    data[k.value] = [v.value, 0, 0]
+                    container_data[ip] = {"tcp_counter": v.value, "udp_counter": 0, "total_counter": 0}
             for k, v in udp_counter.items():
-                if k.value in data:
-                    data[k.value][1] = v.value
+                ip = ip_ntostr(k.value)
+                # ip = k.value
+                if ip in container_data:
+                    container_data[ip]["udp_counter"] = v.value
                 else:
-                    data[k.value] = [0, v.value, 0]
+                    container_data[ip] = {"tcp_counter": 0, "udp_counter": v.value, "total_counter": 0}
             for k, v in total_counter.items():
-                if k.value in data:
-                    data[k.value][2] = v.value
+                ip = ip_ntostr(k.value)
+                # ip = k.value
+                if ip in container_data:
+                    container_data[ip]["total_counter"] = v.value
                 else:
-                    data[k.value] = [0, 0, v.value]
+                    container_data[ip] = {"tcp_counter": 0, "udp_counter": 0, "total_counter": v.value}
+            data = {}
+            data["timestamp"] = time.perf_counter()
+            data["cont_data"] = container_data
             print(data)
-                # print("TCP_COUNT : %10d, COUNT : %10d" % (k.value, v.value))
             await websocket.send_json(data)
             # print("[INFO] Data received: ", data)
         except Exception as e:
@@ -124,11 +132,13 @@ async def websocket_endpoint(websocket: WebSocket):
 def main():
     import uvicorn
     myconfig = Config(None)
+    # myconfig.disallowed_ports = [80]
     insert_xdp_hook(myconfig)
 
 #     parser = argparse.ArgumentParser()
 #     parser.add_argument("--config", "-c", help="Config file")
 #     args = parser.parse_args()
+
     uvicorn.run(app, debug='true')
     print("SERVER ENDED")
     bpf.remove_xdp(device, 0)

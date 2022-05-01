@@ -178,6 +178,7 @@ int hook(struct xdp_md *ctx) {
     if(val != NULL) {
         return XDP_DROP;
     }
+
     struct iphdr *iph;
     iph = (struct iphdr *) (eth + 1);
 

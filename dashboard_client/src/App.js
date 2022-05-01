@@ -16,7 +16,7 @@ const App = () => {
       // console.log("Accepted Message: ", e.data);
       setMsg(e.data);
       console.log("e.data: ", e.data);
-      
+
       setPerfdata(currentData => [...currentData, JSON.parse(e.data)]);
       // console.log("lasan");
 
@@ -84,7 +84,7 @@ const App = () => {
 
   return (
     <div>
-      Hello World!
+      172.17.0.3
       <br />
 
       {/* <ResponsiveContainer width={1000} aspect={3} key={Math.random()}> */}
@@ -93,10 +93,22 @@ const App = () => {
         <YAxis/>
         {/* <Legend/> */}
         <CartesianGrid stroke="#eee" strokeDasharray="5 5"/>
-        <Line type="monotone" dataKey="cont_data.a.tcp" stroke="#8884d8" isAnimationActive={false}/>
-        <Line type="monotone" dataKey="cont_data.a.udp" stroke="#82ca9d" isAnimationActive={false}/>
+        <Line type="monotone" dataKey="cont_data.2886795267.tcp_counter" stroke="#8884d8" isAnimationActive={false}/>
+        <Line type="monotone" dataKey="cont_data.2886795267.total_counter" stroke="#82ca9d" isAnimationActive={false}/>
       </LineChart>
       {/* </ResponsiveContainer> */}
+
+      172.17.0.2
+      <br />
+        <LineChart width={500} height={300} data={perfdata}>
+        <XAxis dataKey="timestamp"/>
+        <YAxis/>
+        {/* <Legend/> */}
+        <CartesianGrid stroke="#eee" strokeDasharray="5 5"/>
+        <Line type="monotone" dataKey="cont_data.2886795266.tcp_counter" stroke="#8884d8" isAnimationActive={false}/>
+        <Line type="monotone" dataKey="cont_data.2886795266.total_counter" stroke="#82ca9d" isAnimationActive={false}/>
+      </LineChart>
+
 
     </div>
   )

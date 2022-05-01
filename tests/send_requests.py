@@ -5,13 +5,13 @@ import socket
 MESSAGE = "Hello, World!"
 
 def send_req(ip):
-    for i in range(10):
+    for i in range(1000):
         r = requests.get(ip)
         print("ip: ", r.json)
 
 # ip is of no use define udp ip above in globals
 def send_udp_req(ip):
-    for i in range(10):
+    for i in range(10000):
         # print(i)
         sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP

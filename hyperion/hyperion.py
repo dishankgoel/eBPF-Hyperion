@@ -86,8 +86,13 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("Accepted Connection")
     running = 1
+    start_time = time.perf_counter()
+    prev_time = start_time
+    curr_tcp, curr_total = {}, {}
+    curr_tcp[2886795267], curr_tcp[2886795266] = 0, 0
+    curr_total[2886795267], curr_total[2886795266] = 0, 0
     while running:
-        time.sleep(1)
+        time.sleep(0.1)
         cnt+=1
         try:
             # data = await websocket.receive_text()
@@ -96,14 +101,17 @@ async def websocket_endpoint(websocket: WebSocket):
             tcp_counter = bpf.get_table("tcp_counter")
             udp_counter = bpf.get_table("udp_counter")
             total_counter = bpf.get_table("total_counter")
-            container_data = { }
+            container_data = {}
+            curr_time = time.perf_counter()
             for k, v in tcp_counter.items():
                 ip = ip_ntostr(k.value)
                 # ip = k.value
+                pkt_per_sec = (v.value - curr_tcp[ip])/(curr_time - prev_time)
                 if ip in container_data:
-                    container_data[ip]["tcp_counter"] = v.value
+                    container_data[ip]["tcp_counter"] = pkt_per_sec
                 else:
-                    container_data[ip] = {"tcp_counter": v.value, "udp_counter": 0, "total_counter": 0}
+                    container_data[ip] = {"tcp_counter": pkt_per_sec, "udp_counter": 0, "total_counter": 0}
+                curr_tcp[ip] = v.value
             for k, v in udp_counter.items():
                 ip = ip_ntostr(k.value)
                 # ip = k.value
@@ -113,15 +121,19 @@ async def websocket_endpoint(websocket: WebSocket):
                     container_data[ip] = {"tcp_counter": 0, "udp_counter": v.value, "total_counter": 0}
             for k, v in total_counter.items():
                 ip = ip_ntostr(k.value)
+                pkt_per_sec = (v.value - curr_total[ip])/(curr_time - prev_time)
                 # ip = k.value
                 if ip in container_data:
-                    container_data[ip]["total_counter"] = v.value
+                    container_data[ip]["total_counter"] = pkt_per_sec
                 else:
-                    container_data[ip] = {"tcp_counter": 0, "udp_counter": 0, "total_counter": v.value}
+                    container_data[ip] = {"tcp_counter": 0, "udp_counter": 0, "total_counter": pkt_per_sec}
+                curr_total[ip] = v.value
             data = {}
-            data["timestamp"] = time.perf_counter()
+            # data["timestamp"] = time.perf_counter()
+            data["timestamp"] = curr_time - start_time
             data["cont_data"] = container_data
             print(data)
+            prev_time = curr_time
             await websocket.send_json(data)
             # print("[INFO] Data received: ", data)
         except Exception as e:

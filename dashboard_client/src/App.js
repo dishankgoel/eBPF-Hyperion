@@ -6,6 +6,7 @@ const App = () => {
   const [msg, setMsg] = useState('');
   const [perfdata, setPerfdata] = useState([]);
   const [maxperflen, setMaxperflen] = useState(10);
+  const [finaldata, setFinaldata] = useState({'a': []});
 
   useEffect(() => {
     var ws = null;
@@ -14,9 +15,20 @@ const App = () => {
     ws.onmessage=(e) => {
       // console.log("Accepted Message: ", e.data);
       setMsg(e.data);
-      // console.log("e.data: ", e.data);
+      console.log("e.data: ", e.data);
       
       setPerfdata(currentData => [...currentData, JSON.parse(e.data)]);
+      // console.log("lasan");
+
+      var json_data = JSON.parse(e.data);
+
+      // var tmp_map = {}
+      // for(var key in json_data.cont_data){
+      //   tmp_map[key] = [...finaldata[key], json_data.cont_data.key]
+      // }
+      // setFinaldata(tmp_map);
+
+      // perfdata.filter(x => x.cont_data.a === 'a');
     };
 
     // console.log("perfdata: ", perfdata);
@@ -25,12 +37,16 @@ const App = () => {
   useEffect(()=>
   {
     console.log("datanew",perfdata);
-    if(perfdata.length == maxperflen){
+    if(perfdata.length === maxperflen){
       var tmp_data = perfdata;
       tmp_data.shift();
       setPerfdata(tmp_data);
     }
-  },[perfdata,])
+  },[perfdata,]);
+
+  useEffect(() => {
+    console.log("finaldata: ", finaldata);
+  }, [finaldata,]);
 
   var data_new = [
     {
@@ -62,21 +78,23 @@ const App = () => {
 
   var tmp = [];
 
+  var cont_datas = {}
+
+  // for()
+
   return (
     <div>
       Hello World!
       <br />
-      {/* data: {perfdata[1]}
-      lasan: {perfdata.map(o => {return o.cnt})[0]} */}
 
       {/* <ResponsiveContainer width={1000} aspect={3} key={Math.random()}> */}
         <LineChart width={500} height={300} data={perfdata}>
-        <XAxis dataKey="cnt"/>
+        <XAxis dataKey="timestamp"/>
         <YAxis/>
         {/* <Legend/> */}
         <CartesianGrid stroke="#eee" strokeDasharray="5 5"/>
-        <Line type="monotone" dataKey="a" stroke="#8884d8" isAnimationActive={false}/>
-        <Line type="monotone" dataKey="b" stroke="#82ca9d" isAnimationActive={false}/>
+        <Line type="monotone" dataKey="cont_data.a.tcp" stroke="#8884d8" isAnimationActive={false}/>
+        <Line type="monotone" dataKey="cont_data.a.udp" stroke="#82ca9d" isAnimationActive={false}/>
       </LineChart>
       {/* </ResponsiveContainer> */}
 

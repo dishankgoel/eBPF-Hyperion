@@ -2,8 +2,6 @@ import threading
 import requests
 import socket
 
-UDP_IP = "127.0.0.1"
-UDP_PORT = 5005
 MESSAGE = "Hello, World!"
 
 def send_req(ip):
@@ -17,19 +15,19 @@ def send_udp_req(ip):
         # print(i)
         sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
-        sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
+        sock.sendto(MESSAGE.encode(), (ip, 5005))
 
 if __name__ == "__main__":
-    t1 = threading.Thread(target=send_req, args=("http://www.google.com",))
-    t2 = threading.Thread(target=send_req, args=("http://www.wikipedia.org",))
-    t3 = threading.Thread(target=send_udp_req, args=("http://www.wikipedia.org",))
+    t1 = threading.Thread(target=send_req, args=("http://172.17.0.3",))
+    t2 = threading.Thread(target=send_req, args=("http://172.17.0.2",))
+    t3 = threading.Thread(target=send_udp_req, args=("172.17.0.2",))
 
-    # t1.start()
-    # t2.start()
+    t1.start()
+    t2.start()
     t3.start()
 
-    # t1.join()
-    # t2.join()
+    t1.join()
+    t2.join()
     t3.join()
 
     print("Done!")
